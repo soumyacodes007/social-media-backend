@@ -141,4 +141,41 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
 
 
 
+// DELETE /api/posts/:id - Delete a specific post
+app.delete('/api/posts/:id', async (req, res) => {
+  try {
+    // 1. Get the post ID from the URL parameters
+    const { id } = req.params;
+
+    // Check if the ID is a valid MongoDB ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid Post ID format.' });
+    }
+
+    
+    //    findByIdAndDelete() finds the document and removes it.
+    const deletedPost = await Post.findByIdAndDelete(id);
+
+    // 3. Check if a post was actually found and deleted
+    if (!deletedPost) {
+      // If deletedPost is null, it means no post with that ID was found
+      return res.status(404).json({ message: 'Post not found.' });
+    }
+
+    // 4. Send a success response
+    res.status(200).json({ 
+        message: 'Post deleted successfully.',
+        deletedPost: deletedPost // It's often helpful to return the deleted item
+    });
+
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res.status(500).json({ message: 'Error deleting post', error: error.message });
+  }
+});
+
+
+
+
+
 module.exports = app;
