@@ -1,92 +1,86 @@
-// server.js (Complete and Corrected for Mock Testing)
-
+// index.js
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
-// We don't need AWS for the mock, but we'll leave it for when you switch back
-const AWS = require('aws-sdk'); 
+const AWS = require('aws-sdk');
 require('dotenv').config();
 
-// IMPORT YOUR POST MODEL
 const Post = require('./models/post');
-
-// --- THIS IS THE MISSING PART ---
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// --- MIDDLEWARE ---
+//  AWS S3 Configuration 
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
+
+//  MIDDLEWARE
 app.use(express.json());
 
-// --- MULTER SETUP ---
+//  MULTER SETUP 
+// We'll store the file in memory before uploading to S3
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// --- DATABASE CONNECTION ---
+//  DATABASE CONNECTION 
+
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB connected!'))
-  .catch((err) => console.error('❌ MongoDB connection error:', err));
+  .then(() => console.log('MongoDB connected!'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 
-// --- API ROUTES (ENDPOINTS) ---
+// API ROUTES 
 
-// GET /api/posts (Your existing code for this should be fine)
+// GET /api/posts 
 app.get('/api/posts', async (req, res) => {
-  try {
-    const posts = await Post.find().sort({ createdAt: -1 });
-    res.status(200).json(posts);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching posts', error: error });
-  }
+    
 });
 
-// POST /api/posts - ** THE MOCK TESTING VERSION **
+// POST /api/posts 
+// `upload.single('image')` is multer middleware to handle the file
 app.post('/api/posts', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No image file uploaded.' });
     }
 
-    // --- MOCK LOGIC ---
-    // STEP 1: The real S3 upload logic is commented out.
-    /*
+    //  S3 UPLOAD LOGIC 
     const uploadParams = {
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `${Date.now()}_${req.file.originalname}`,
+      Key: `${Date.now()}_${req.file.originalname}`, // Creates a unique filename
       Body: req.file.buffer,
       ContentType: req.file.mimetype,
     };
 
+    // The s3.upload function handles the upload and gives us the location
     s3.upload(uploadParams, async (err, data) => {
       if (err) {
         console.error("AWS S3 upload error:", err);
         return res.status(500).json({ message: "Error uploading to AWS S3" });
       }
-    */
-    
-    // STEP 2: We create a fake imageUrl.
-    const imageUrl = "https://fake-s3-bucket.s3.amazonaws.com/test-image.jpg";
 
-    // The rest of the logic continues as normal.
-    const { username, caption, userProfileUrl } = req.body;
+      // `data.Location` contains the public URL of the uploaded image
+      const imageUrl = data.Location;
 
-    if (!username || !caption) {
-      return res.status(400).json({ message: 'Username and caption are required.' });
-    }
+      // Get the rest of the data from the request body
+      const { username, caption, userProfileUrl } = req.body;
 
-    const newPost = new Post({
-      username,
-      caption,
-      imageUrl: imageUrl, // Using the fake URL
-      userProfileUrl: userProfileUrl || '',
+      if (!username || !caption) {
+        return res.status(400).json({ message: 'Username and caption are required.' });
+      }
+
+      const newPost = new Post({
+        username,
+        caption,
+        imageUrl: imageUrl, // Use the URL from the S3 result!
+        userProfileUrl: userProfileUrl || '',
+      });
+
+      const savedPost = await newPost.save();
+      res.status(201).json(savedPost);
     });
-
-    const savedPost = await newPost.save();
-    res.status(201).json(savedPost);
-
-    // STEP 3: The end of the S3 comment block.
-    /*
-    });
-    */
   } catch (error) {
     console.error("Server error:", error);
     res.status(500).json({ message: 'Error creating post', error: error });
@@ -94,7 +88,7 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
 });
 
 
-// --- START THE SERVER ---
+// START SERVER 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(` Server running on http://localhost:${PORT}`);
 });
