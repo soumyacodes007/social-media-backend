@@ -28,7 +28,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 
-// --- CLOUDINARY CONFIGURATION ---
+// cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -36,7 +36,7 @@ cloudinary.config({
 });
 
 
-// --- DATABASE CONNECTION (Serverless-Friendly) ---
+// 
 // This pattern prevents new connections from being made on every serverless function invocation
 let conn = null;
 const connectDB = async () => {
@@ -72,7 +72,7 @@ app.use(async (req, res, next) => {
 });
 
 
-// --- API ROUTES ---
+
 
 // Root "Welcome" Route - great for health checks
 app.get('/', (req, res) => {
@@ -131,6 +131,5 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
 });
 
 
-// --- EXPORT THE APP FOR VERCEL ---
-// This is the crucial part that allows Vercel to handle the server logic
+
 module.exports = app;
