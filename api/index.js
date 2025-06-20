@@ -97,7 +97,7 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No image file uploaded.' });
     }
-    const { username, caption } = req.body;
+    const { username, caption, name, bio, interests, website, music, phone, password, email, gender, userProfileUrl } = req.body;
     if (!username || !caption) {
       return res.status(400).json({ message: 'Username and caption are required fields.' });
     }
@@ -116,7 +116,16 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
       username,
       caption,
       imageUrl: result.secure_url, // Use the secure URL from Cloudinary
-      userProfileUrl: req.body.userProfileUrl || '',
+      userProfileUrl: userProfileUrl || '',
+      name,
+      bio,
+      interests,
+      website,
+      music,
+      phone,
+      password,
+      email,
+      gender,
     });
 
     const savedPost = await newPost.save();
