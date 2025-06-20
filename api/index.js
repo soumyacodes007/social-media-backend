@@ -141,6 +141,47 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
 
 
 
+
+
+
+
+// PATCH /api/posts/:id - Update a specific post
+app.patch('/api/posts/:id', async (req, res) => {
+  try {
+    // 1. Get the post ID from the URL and the update data from the body
+    const { id } = req.params;
+    const updates = req.body;
+
+    // (Optional but good practice) Check for a valid ID format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid Post ID format.' });
+    }
+
+    // 2. Find the post by ID and update it with the new data
+    //    We use { new: true } to get the updated document back.
+    //    We use { runValidators: true } to ensure our schema rules (like for email/phone) are applied.
+    const updatedPost = await Post.findByIdAndUpdate(
+      id, 
+      updates, 
+      { new: true, runValidators: true }
+    );
+
+    // 3. Check if a post was found and updated
+    if (!updatedPost) {
+      return res.status(404).json({ message: 'Post not found.' });
+    }
+
+    // 4. Send the updated post as a success response
+    res.status(200).json(updatedPost);
+
+  } catch (error) {
+    console.error("Error updating post:", error);
+    // If a validation error occurs (e.g., invalid email), it will be caught here
+    res.status(500).json({ message: 'Error updating post', error: error.message });
+  }
+});
+
+
 // DELETE /api/posts/:id - Delete a specific post
 app.delete('/api/posts/:id', async (req, res) => {
   try {
