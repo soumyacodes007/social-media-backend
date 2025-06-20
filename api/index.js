@@ -12,7 +12,7 @@ const Post = require('../models/post');
 
 const app = express();
 
-// --- MIDDLEWARE SETUP ---
+
 
 // 1. Enable CORS for all requests
 // This is essential for your React Native app to be able to call the API
