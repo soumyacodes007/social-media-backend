@@ -108,9 +108,6 @@ if (req.file) {
 
 }
     const { username, caption, name, bio, interests, website, music, phone, password, email, gender, userProfileUrl } = req.body;
-    if (!username || !caption) {
-      return res.status(400).json({ message: 'Username and caption are required fields.' });
-    }
 
     // 2. Upload image to Cloudinary
     // Convert buffer to a Data URI, which is a common way to handle uploads
