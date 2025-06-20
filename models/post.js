@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const postSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: true,
+    required: false,
   },
   userProfileUrl: {
     type: String,
@@ -13,15 +13,15 @@ const postSchema = new mongoose.Schema({
   },
   imageUrl: {
     type: String,
-    required: true,
+    required: false,
   },
   caption: {
     type: String,
-    required: true,
+    required: false,
   },
   name: {
     type: String,
-    required: false,
+    required: true,
   },
   bio: {
     type: String,
@@ -41,7 +41,8 @@ const postSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: false,
+    required: true,
+    match: [/^\d{10}$/, "Phone number must be 10 digits"],
   },
   password: {
     type: String,
@@ -49,7 +50,8 @@ const postSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: false,
+    required: true,
+    match: [/^\S+@\S+\.\S+$/, "Invalid email address"],
   },
   gender: {
     type: String,
