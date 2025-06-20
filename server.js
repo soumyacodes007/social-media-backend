@@ -25,20 +25,28 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 //  DATABASE CONNECTION 
-
+// (Note: useNewUrlParser and useUnifiedTopology are no longer needed, but leaving them doesn't hurt)
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected!'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+  .then(() => console.log('✅ MongoDB connected!'))
+  .catch((err) => console.error(' MongoDB connection error:', err));
 
 
 // API ROUTES 
 
-// GET /api/posts 
+// GET /api/posts - Fetch all posts for the feed
 app.get('/api/posts', async (req, res) => {
-    
+    // code for fetching all posts
+    try {
+        // Find all posts in the database and sort them by creation date (newest first)
+        const posts = await Post.find().sort({ createdAt: -1 });
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error("Error fetching posts:", error);
+        res.status(500).json({ message: 'Error fetching posts', error: error });
+    }
 });
 
-// POST /api/posts 
+// POST /api/posts - Create a new post
 // `upload.single('image')` is multer middleware to handle the file
 app.post('/api/posts', upload.single('image'), async (req, res) => {
   try {
