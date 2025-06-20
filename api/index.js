@@ -94,9 +94,19 @@ app.get('/api/posts', async (req, res) => {
 app.post('/api/posts', upload.single('image'), async (req, res) => {
   try {
     // 1. Validate input
-    if (!req.file) {
-      return res.status(400).json({ message: 'No image file uploaded.' });
-    }
+    let imageUrl = "";
+
+if (req.file) {
+  const b64 = Buffer.from(req.file.buffer).toString("base64");
+  let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+
+  const result = await cloudinary.uploader.upload(dataURI, {
+    folder: "social_media_posts",
+  });
+
+  imageUrl: imageUrl || ""
+
+}
     const { username, caption, name, bio, interests, website, music, phone, password, email, gender, userProfileUrl } = req.body;
     if (!username || !caption) {
       return res.status(400).json({ message: 'Username and caption are required fields.' });
@@ -113,20 +123,20 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
 
     // 3. Create and save the new post in the database
     const newPost = new Post({
-      username,
-      caption,
-      imageUrl: result.secure_url, // Use the secure URL from Cloudinary
-      userProfileUrl: userProfileUrl || '',
-      name,
-      bio,
-      interests,
-      website,
-      music,
-      phone,
-      password,
-      email,
-      gender,
-    });
+  username,
+  caption,
+  imageUrl: imageUrl || "", // fallback if no image
+  userProfileUrl: userProfileUrl || '',
+  name,
+  bio,
+  interests,
+  website,
+  music,
+  phone,
+  password,
+  email,
+  gender,
+});
 
     const savedPost = await newPost.save();
     
