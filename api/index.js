@@ -1,67 +1,136 @@
-// api/index.js
+//  api/index.js
 
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const cors = require('cors');
+const cors = require('cors'); // <-- Import CORS
 require('dotenv').config();
 
-const Post = require('../models/post'); // 👈 Note the path change: ../
+// Important: The path is now relative to the `api` folder
+const Post = require('../models/post'); 
+
 const app = express();
 
-// Cloudinary Config...
+// --- MIDDLEWARE SETUP ---
+
+// 1. Enable CORS for all requests
+// This is essential for your React Native app to be able to call the API
+app.use(cors());
+
+// 2. Body Parsers
+app.use(express.json()); // To parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // To parse URL-encoded bodies
+
+// 3. Multer setup for file uploads
+// We'll store the file in memory before uploading to Cloudinary
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+
+// --- CLOUDINARY CONFIGURATION ---
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// MIDDLEWARE
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public')); // This might not be needed here anymore, but doesn't hurt
 
-// MULTER SETUP
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
-// DATABASE CONNECTION
-// It's good practice to manage the connection state
+// --- DATABASE CONNECTION (Serverless-Friendly) ---
+// This pattern prevents new connections from being made on every serverless function invocation
 let conn = null;
 const connectDB = async () => {
   if (conn == null) {
-    conn = mongoose.connect(process.env.MONGO_URI).then(() => {
-      console.log('✅ New MongoDB connection established!');
+    console.log('Creating new MongoDB connection...');
+    conn = mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000 // Keep the connection alive for 5 seconds
+    }).then(() => {
+      console.log('✅ MongoDB Connected!');
       return mongoose.connection;
-    }).catch(err => console.error(err));
+    }).catch(err => {
+        console.error('MongoDB Connection Error:', err);
+        // Explicitly set conn to null on connection failure to allow retries
+        conn = null; 
+    });
+    // `await` the promise to ensure the connection is established before proceeding
     await conn;
+  } else {
+    console.log('Re-using existing MongoDB connection.');
   }
   return conn;
 };
-// Middleware to ensure DB is connected before handling requests
+
+// Middleware to ensure DB is connected before handling any request
 app.use(async (req, res, next) => {
-    await connectDB();
-    next();
+    try {
+        await connectDB();
+        next();
+    } catch(error) {
+        console.error("Database connection middleware error:", error);
+        res.status(503).json({ message: "Service Unavailable: Could not connect to the database." });
+    }
 });
 
-// API ROUTES
+
+// --- API ROUTES ---
+
+// Root "Welcome" Route - great for health checks
+app.get('/', (req, res) => {
+    res.status(200).json({ message: "Welcome to the Social Media API. It is live and running." });
+});
+
+// GET /api/posts - Fetch all posts for the feed
 app.get('/api/posts', async (req, res) => {
-    // ... your GET route code ...
+    try {
+        const posts = await Post.find().sort({ createdAt: -1 });
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error("Error fetching posts:", error);
+        res.status(500).json({ message: 'Error fetching posts', error: error.message });
+    }
 });
 
+// POST /api/posts - Create a new post
 app.post('/api/posts', upload.single('image'), async (req, res) => {
-    // ... your POST route code ...
+  try {
+    // 1. Validate input
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file uploaded.' });
+    }
+    const { username, caption } = req.body;
+    if (!username || !caption) {
+      return res.status(400).json({ message: 'Username and caption are required fields.' });
+    }
+
+    // 2. Upload image to Cloudinary
+    // Convert buffer to a Data URI, which is a common way to handle uploads
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+    
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: "social_media_posts",
+    });
+
+    // 3. Create and save the new post in the database
+    const newPost = new Post({
+      username,
+      caption,
+      imageUrl: result.secure_url, // Use the secure URL from Cloudinary
+      userProfileUrl: req.body.userProfileUrl || '',
+    });
+
+    const savedPost = await newPost.save();
+    
+    // 4. Send successful response
+    res.status(201).json(savedPost);
+
+  } catch (error) {
+    console.error("Server error creating post:", error);
+    res.status(500).json({ message: 'Error creating post', error: error.message });
+  }
 });
 
 
-
-/*
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(` Server running on http://localhost:${PORT}`);
-});
-*/
-
-// ✅ EXPORT THE EXPRESS APP FOR VERCEL
+// --- EXPORT THE APP FOR VERCEL ---
+// This is the crucial part that allows Vercel to handle the server logic
 module.exports = app;
