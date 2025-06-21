@@ -6,6 +6,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const Post = require('../models/post');
+const Note = require('../models/note'); // ✅ New line to import Note model
 const app = express();
 
 // Enable CORS
@@ -184,6 +185,63 @@ app.delete('/api/posts/:id', async (req, res) => {
   } catch (error) {
     console.error("Error deleting post:", error);
     res.status(500).json({ message: 'Error deleting post', error: error.message });
+  }
+});
+
+// ===== Notes Routes =====
+
+// GET /api/notes
+app.get('/api/notes', async (req, res) => {
+  try {
+    const now = new Date();
+    const notes = await Note.find({ expiresAt: { $gt: now } }).sort({ createdAt: -1 });
+    res.status(200).json(notes);
+  } catch (error) {
+    console.error("Error fetching notes:", error);
+    res.status(500).json({ message: 'Error fetching notes', error: error.message });
+  }
+});
+
+// POST /api/notes
+app.post('/api/notes', async (req, res) => {
+  try {
+    const { name, text } = req.body;
+    if (!name || !text) {
+      return res.status(400).json({ message: 'Name and text are required.' });
+    }
+
+    const newNote = new Note({
+      name,
+      text,
+      expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000)
+    });
+
+    const saved = await newNote.save();
+    res.status(201).json(saved);
+  } catch (error) {
+    console.error("Error saving note:", error);
+    res.status(500).json({ message: 'Error saving note', error: error.message });
+  }
+});
+
+// DELETE /api/notes/:id
+app.delete('/api/notes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid Note ID format.' });
+    }
+
+    const deleted = await Note.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Note not found.' });
+    }
+
+    res.status(200).json({ message: 'Note deleted successfully', deleted });
+  } catch (error) {
+    console.error("Error deleting note:", error);
+    res.status(500).json({ message: 'Error deleting note', error: error.message });
   }
 });
 
