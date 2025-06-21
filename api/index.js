@@ -275,13 +275,14 @@ app.get('/api/chats/:userPhone', async (req, res) => {
   const { userPhone } = req.params;
 
   try {
-    const chats = await Chat.find({ participants: userPhone });
+    const chats = await Chat.find({ participants: { $in: [userPhone] } }); // 🔥 fixed
     res.status(200).json(chats);
   } catch (error) {
     console.error("Error fetching chats:", error);
     res.status(500).json({ message: 'Error fetching chats', error: error.message });
   }
 });
+
 
 
 
