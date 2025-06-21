@@ -292,17 +292,25 @@ app.delete('/api/chats/:user1/:user2', async (req, res) => {
 
 
 // GET /api/chats/:userPhone
+// GET /api/chats/:userPhone
 app.get('/api/chats/:userPhone', async (req, res) => {
   const { userPhone } = req.params;
 
   try {
-    const chats = await Chat.find({ participants: { $in: [userPhone] } }); // 🔥 fixed
+    const chats = await Chat.find({
+      $or: [
+        { participants: [userPhone] },
+        { participants: { $all: [userPhone], $size: 2 } }
+      ]
+    });
+
     res.status(200).json(chats);
   } catch (error) {
     console.error("Error fetching chats:", error);
     res.status(500).json({ message: 'Error fetching chats', error: error.message });
   }
 });
+
 
 
 
