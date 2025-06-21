@@ -224,6 +224,17 @@ app.post('/api/notes', async (req, res) => {
     res.status(500).json({ message: 'Error saving note', error: error.message });
   }
 });
+// DELETE /api/chats/delete-all
+app.delete('/api/chats/delete-all', async (req, res) => {
+  try {
+    await Chat.deleteMany({});
+    res.status(200).json({ message: 'All chats deleted successfully.' });
+  } catch (error) {
+    console.error("Error deleting all chats:", error);
+    res.status(500).json({ message: 'Failed to delete all chats', error: error.message });
+  }
+});
+
 
 // DELETE /api/notes/:id
 app.delete('/api/notes/:id', async (req, res) => {
