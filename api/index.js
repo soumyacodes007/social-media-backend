@@ -248,7 +248,7 @@ app.delete('/api/notes/:id', async (req, res) => {
 
 // POST /api/chats
 app.post('/api/chats', async (req, res) => {
-  const { sender, receiver, text } = req.body;
+const participants = sender === receiver ? [sender] : [sender, receiver].sort();
   if (!sender || !receiver || !text) {
     return res.status(400).json({ message: 'Missing sender, receiver, or text' });
   }
