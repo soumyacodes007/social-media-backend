@@ -269,6 +269,23 @@ const participants = sender === receiver ? [sender] : [sender, receiver].sort();
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+// DELETE /api/chats/:user1/:user2
+app.delete('/api/chats/:user1/:user2', async (req, res) => {
+  const { user1, user2 } = req.params;
+  const participants = [user1, user2].sort();
+
+  try {
+    const deleted = await Chat.findOneAndDelete({ participants });
+    if (!deleted) {
+      return res.status(404).json({ message: "Chat not found." });
+    }
+    res.status(200).json({ message: "Chat deleted successfully." });
+  } catch (err) {
+    console.error("Error deleting chat:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 
 // GET /api/chats/:userPhone
 app.get('/api/chats/:userPhone', async (req, res) => {
