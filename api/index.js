@@ -4,6 +4,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 require('dotenv').config();
+const Chat = require('../models/chat'); // ✅ add this
 
 const Post = require('../models/post');
 const Note = require('../models/note'); // ✅ New line to import Note model
@@ -244,5 +245,44 @@ app.delete('/api/notes/:id', async (req, res) => {
     res.status(500).json({ message: 'Error deleting note', error: error.message });
   }
 });
+
+// POST /api/chats
+app.post('/api/chats', async (req, res) => {
+  const { sender, receiver, text } = req.body;
+  if (!sender || !receiver || !text) {
+    return res.status(400).json({ message: 'Missing sender, receiver, or text' });
+  }
+
+  try {
+    const participants = [sender, receiver].sort();
+    let chat = await Chat.findOne({ participants });
+
+    if (!chat) {
+      chat = new Chat({ participants, messages: [] });
+    }
+
+    chat.messages.push({ sender, text });
+    const saved = await chat.save();
+    res.status(200).json(saved);
+  } catch (error) {
+    console.error("Error saving chat:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// GET /api/chats/:userPhone
+app.get('/api/chats/:userPhone', async (req, res) => {
+  const { userPhone } = req.params;
+
+  try {
+    const chats = await Chat.find({ participants: userPhone });
+    res.status(200).json(chats);
+  } catch (error) {
+    console.error("Error fetching chats:", error);
+    res.status(500).json({ message: 'Error fetching chats', error: error.message });
+  }
+});
+
+
 
 module.exports = app;
