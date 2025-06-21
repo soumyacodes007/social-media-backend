@@ -247,14 +247,17 @@ app.delete('/api/notes/:id', async (req, res) => {
 });
 
 // POST /api/chats
+// POST /api/chats
 app.post('/api/chats', async (req, res) => {
-const participants = sender === receiver ? [sender] : [sender, receiver].sort();
+  const { sender, receiver, text } = req.body; // ✅ Extract from req.body
+
   if (!sender || !receiver || !text) {
     return res.status(400).json({ message: 'Missing sender, receiver, or text' });
   }
 
+  const participants = sender === receiver ? [sender] : [sender, receiver].sort();
+
   try {
-    const participants = [sender, receiver].sort();
     let chat = await Chat.findOne({ participants });
 
     if (!chat) {
@@ -269,6 +272,7 @@ const participants = sender === receiver ? [sender] : [sender, receiver].sort();
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
 // DELETE /api/chats/:user1/:user2
 app.delete('/api/chats/:user1/:user2', async (req, res) => {
   const { user1, user2 } = req.params;
