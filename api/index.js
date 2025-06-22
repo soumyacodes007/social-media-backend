@@ -230,14 +230,16 @@ app.get("/api/stories", async (req, res) => {
   }
 });
 
-// Global error handler
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ message: "Unexpected server error", error: err.message });
-});
+// Local development only (optional)
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
 
-// ✅ Export only the handler for Vercel
-const handler = serverless(app);
-module.exports = { handler };
+// Vercel serverless export
+const serverless = require('serverless-http');
+module.exports.handler = serverless(app);
+
 
