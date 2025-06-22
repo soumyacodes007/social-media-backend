@@ -309,18 +309,22 @@ app.get('/api/chats/:userPhone', async (req, res) => {
 
   try {
     const chats = await Chat.find({
-      $or: [
-        { participants: [userPhone] },
-        { participants: { $all: [userPhone], $size: 2 } }
-      ]
+      participants: { $in: [userPhone] }
     });
 
-    res.status(200).json(chats);
+    // Filter out self-chats (where both participants are the same user)
+    const filteredChats = chats.filter(chat => {
+      // either more than 1 participant, or if self-chat, skip
+      return !(chat.participants.length === 1 && chat.participants[0] === userPhone);
+    });
+
+    res.status(200).json(filteredChats);
   } catch (error) {
     console.error("Error fetching chats:", error);
     res.status(500).json({ message: 'Error fetching chats', error: error.message });
   }
 });
+
 
 
 
