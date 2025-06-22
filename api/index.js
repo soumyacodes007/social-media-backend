@@ -354,14 +354,17 @@ app.post("/api/stories", upload.single("media"), async (req, res) => {
 // Get all active stories (not expired)
 app.get("/api/stories", async (req, res) => {
   try {
-    const stories = await Story.find()
-      .populate("user", "name profilePic") // optional
+    const now = new Date();
+    const stories = await Story.find({ expiresAt: { $gt: now } })
+      .populate("user", "name profilePic")
       .sort({ createdAt: -1 });
+
     res.json(stories);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 module.exports = app;
