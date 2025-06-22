@@ -1,21 +1,25 @@
 const express = require('express');
+const http = require('http'); // 📌 Added for Socket.IO
 const mongoose = require('mongoose');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 require('dotenv').config();
-const Chat = require('../models/chat'); // ✅ add this
-
+const Chat = require('../models/chat');
 const Post = require('../models/post');
-const Note = require('../models/note'); // ✅ New line to import Note model
+const Note = require('../models/note');
+
 const app = express();
+const server = http.createServer(app); // wrap for sockets
+const { Server } = require('socket.io');
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+});
 
-// Enable CORS
 app.use(cors());
-
-// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // Multer config (store file in memory)
 const storage = multer.memoryStorage();
@@ -31,24 +35,24 @@ cloudinary.config({
 // MongoDB connection caching
 let conn = null;
 const connectDB = async () => {
-  if (conn == null) {
-    console.log('Creating new MongoDB connection...');
-    conn = mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000,
-    }).then(() => {
-      console.log('✅ MongoDB Connected!');
-      return mongoose.connection;
-    }).catch(err => {
-      console.error('MongoDB Connection Error:', err);
-      conn = null;
-    });
-
+  if (!conn) {
+    conn = mongoose
+      .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
+      .then(() => mongoose.connection)
+      .catch(err => { conn = null; console.error('MongoDB Connection Error:', err); });
     await conn;
-  } else {
-    console.log('Re-using existing MongoDB connection.');
   }
   return conn;
 };
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB middleware error:", err);
+    res.status(503).json({ message: "Service Unavailable: Could not connect to DB." });
+  }
+});;
 
 // DB connection middleware
 app.use(async (req, res, next) => {
@@ -301,8 +305,44 @@ app.delete('/api/chats/:user1/:user2', async (req, res) => {
   }
 });
 
+// ===== SOCKET.IO REAL-TIME CHAT =====
+io.on('connection', socket => {
+  console.log('✅ Socket connected:', socket.id);
 
-// GET /api/chats/:userPhone
+  socket.on('join_chat', async ({ sender, receiver }) => {
+    const room = [sender, receiver].sort().join('-');
+    socket.join(room);
+
+    let chat = await Chat.findOne({
+      participants: { $all: [sender, receiver], $size: 2 }
+    });
+    socket.emit('load_messages', chat?.messages || []);
+  });
+
+  socket.on('send_message', async ({ sender, receiver, text }) => {
+    const room = [sender, receiver].sort().join('-');
+
+    let chat = await Chat.findOne({
+      participants: { $all: [sender, receiver], $size: 2 }
+    });
+    const message = { sender, receiver, text };
+
+    if (!chat) {
+      chat = new Chat({ participants: [sender, receiver], messages: [message] });
+    } else {
+      chat.messages.push(message);
+    }
+    await chat.save();
+
+    io.to(room).emit('receive_message', message);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('❌ Socket disconnected:', socket.id);
+  });
+});
+// ===== END SOCKET.IO BLOCK =====
+
 // GET /api/chats/:userPhone
 app.get('/api/chats/:userPhone', async (req, res) => {
   const { userPhone } = req.params;
