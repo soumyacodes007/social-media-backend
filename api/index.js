@@ -240,6 +240,7 @@ if (process.env.NODE_ENV !== "production") {
 
 // Vercel serverless export
 
-module.exports.handler = serverless(app);
+module.exports = serverless(app);
+
 
 
