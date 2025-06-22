@@ -231,10 +231,13 @@ app.get("/api/stories", async (req, res) => {
 });
 
 // Global error handler
+// Global error handler
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ message: "Unexpected server error", error: err.message });
 });
 
-module.exports = app;
-module.exports.handler = serverless(app);
+// ✅ Export only the handler for Vercel
+const handler = serverless(app);
+module.exports = { handler };
+
