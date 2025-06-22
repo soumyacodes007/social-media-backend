@@ -10,6 +10,7 @@ const router = express.Router();
 const Post = require('../models/post');
 const Note = require('../models/note'); // ✅ New line to import Note model
 const app = express();
+const storiesRoute = require("./index"); // or wherever your routes are
 
 // Enable CORS
 app.use(cors());
@@ -324,18 +325,34 @@ app.get('/api/chats/:userPhone', async (req, res) => {
 });
 
 
-router.post("/api/stories", async (req, res) => {
+app.post("/api/stories", upload.single("media"), async (req, res) => {
   try {
-    const { user, mediaUrl, type } = req.body;
+    let mediaUrl = "";
+    if (req.file) {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: "stories",
+        resource_type: "auto", // handles both image and video
+      });
+
+      mediaUrl = result.secure_url;
+    }
+
+    const { user, type } = req.body;
+
     const newStory = await Story.create({ user, mediaUrl, type });
     res.status(201).json(newStory);
   } catch (err) {
+    console.error("Error uploading story:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
+
 // Get all active stories (not expired)
-router.get("/api/stories", async (req, res) => {
+app.get("/api/stories", async (req, res) => {
   try {
     const stories = await Story.find()
       .populate("user", "name profilePic") // optional
