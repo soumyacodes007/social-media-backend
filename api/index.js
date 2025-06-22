@@ -4,13 +4,13 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 require('dotenv').config();
-const Chat = require('../models/chat'); // ✅ add this
+const Chat = require('../models/chat');
 const Story = require("./models/Story");
 const router = express.Router();
 const Post = require('../models/post');
-const Note = require('../models/note'); // ✅ New line to import Note model
+const Note = require('../models/note');
 const app = express();
-const storiesRoute = require("./index"); // or wherever your routes are
+const storiesRoute = require("./index");
 
 // Enable CORS
 app.use(cors());
@@ -84,7 +84,6 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
   try {
     let imageUrl = "";
 
-    // ✅ Upload to Cloudinary only if image is provided
     if (req.file) {
       const b64 = Buffer.from(req.file.buffer).toString("base64");
       const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
@@ -96,37 +95,18 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
       imageUrl = result.secure_url;
     }
 
-    // Extract data
     const {
-      username,
-      caption,
-      name,
-      bio,
-      interests,
-      website,
-      music,
-      phone,
-      password,
-      email,
-      gender,
-      userProfileUrl
+      username, caption, name, bio, interests, website, music,
+      phone, password, email, gender, userProfileUrl
     } = req.body;
 
-    // Save to DB
     const newPost = new Post({
       username: username || "",
       caption: caption || "",
       imageUrl,
       userProfileUrl: userProfileUrl || '',
-      name,
-      bio,
-      interests,
-      website,
-      music,
-      phone,
-      password,
-      email,
-      gender,
+      name, bio, interests, website, music,
+      phone, password, email, gender,
     });
 
     const savedPost = await newPost.save();
@@ -148,11 +128,9 @@ app.patch('/api/posts/:id', async (req, res) => {
       return res.status(400).json({ message: 'Invalid Post ID format.' });
     }
 
-    const updatedPost = await Post.findByIdAndUpdate(
-      id,
-      updates,
-      { new: true, runValidators: true }
-    );
+    const updatedPost = await Post.findByIdAndUpdate(id, updates, {
+      new: true, runValidators: true
+    });
 
     if (!updatedPost) {
       return res.status(404).json({ message: 'Post not found.' });
@@ -180,18 +158,12 @@ app.delete('/api/posts/:id', async (req, res) => {
       return res.status(404).json({ message: 'Post not found.' });
     }
 
-    res.status(200).json({
-      message: 'Post deleted successfully.',
-      deletedPost
-    });
-
+    res.status(200).json({ message: 'Post deleted successfully.', deletedPost });
   } catch (error) {
     console.error("Error deleting post:", error);
     res.status(500).json({ message: 'Error deleting post', error: error.message });
   }
 });
-
-// ===== Notes Routes =====
 
 // GET /api/notes
 app.get('/api/notes', async (req, res) => {
@@ -226,17 +198,6 @@ app.post('/api/notes', async (req, res) => {
     res.status(500).json({ message: 'Error saving note', error: error.message });
   }
 });
-// DELETE /api/chats/delete-all
-app.delete('/api/chats/delete-all', async (req, res) => {
-  try {
-    await Chat.deleteMany({});
-    res.status(200).json({ message: 'All chats deleted successfully.' });
-  } catch (error) {
-    console.error("Error deleting all chats:", error);
-    res.status(500).json({ message: 'Failed to delete all chats', error: error.message });
-  }
-});
-
 
 // DELETE /api/notes/:id
 app.delete('/api/notes/:id', async (req, res) => {
@@ -259,10 +220,20 @@ app.delete('/api/notes/:id', async (req, res) => {
   }
 });
 
-// POST /api/chats
+// DELETE /api/chats/delete-all
+app.delete('/api/chats/delete-all', async (req, res) => {
+  try {
+    await Chat.deleteMany({});
+    res.status(200).json({ message: 'All chats deleted successfully.' });
+  } catch (error) {
+    console.error("Error deleting all chats:", error);
+    res.status(500).json({ message: 'Failed to delete all chats', error: error.message });
+  }
+});
+
 // POST /api/chats
 app.post('/api/chats', async (req, res) => {
-  const { sender, receiver, text } = req.body; // ✅ Extract from req.body
+  const { sender, receiver, text } = req.body;
 
   if (!sender || !receiver || !text) {
     return res.status(400).json({ message: 'Missing sender, receiver, or text' });
@@ -303,8 +274,6 @@ app.delete('/api/chats/:user1/:user2', async (req, res) => {
   }
 });
 
-
-// GET /api/chats/:userPhone
 // GET /api/chats/:userPhone
 app.get('/api/chats/:userPhone', async (req, res) => {
   const { userPhone } = req.params;
@@ -324,7 +293,7 @@ app.get('/api/chats/:userPhone', async (req, res) => {
   }
 });
 
-
+// POST /api/stories
 app.post("/api/stories", upload.single("media"), async (req, res) => {
   try {
     let mediaUrl = "";
@@ -334,7 +303,7 @@ app.post("/api/stories", upload.single("media"), async (req, res) => {
 
       const result = await cloudinary.uploader.upload(dataURI, {
         folder: "stories",
-        resource_type: "auto", // handles both image and video
+        resource_type: "auto",
       });
 
       mediaUrl = result.secure_url;
@@ -350,18 +319,30 @@ app.post("/api/stories", upload.single("media"), async (req, res) => {
   }
 });
 
-
-// Get all active stories (not expired)
+// GET /api/stories
 app.get("/api/stories", async (req, res) => {
   try {
-    const stories = await Story.find()
-      .populate("user", "name profilePic") // optional
+    const now = new Date();
+    const stories = await Story.find({ expiresAt: { $gt: now } })
+      .populate("user", "name profilePic")
       .sort({ createdAt: -1 });
+
     res.json(stories);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ message: "Unexpected server error", error: err.message });
+});
 
 module.exports = app;
