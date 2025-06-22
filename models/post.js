@@ -1,7 +1,5 @@
-// models/Post.js
 const mongoose = require('mongoose');
 
-// for now we are storing username and userProfileUrl on the post
 const postSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -9,11 +7,23 @@ const postSchema = new mongoose.Schema({
   },
   userProfileUrl: {
     type: String,
-    required: false, // Maybe some users don't have a profile pic
+    required: false,
   },
   imageUrl: {
     type: String,
     required: false,
+  },
+  videoUrl: {
+    type: String,
+    required: false, // New: for video posts
+  },
+  audioUrl: {
+    type: String,
+    required: false, // New: for voice posts
+  },
+  textContent: {
+    type: String,
+    required: false, // New: for text posts
   },
   caption: {
     type: String,
@@ -59,7 +69,7 @@ const postSchema = new mongoose.Schema({
   },
   createdAt: {
     type: Date,
-    default: Date.now, // Automatically set the creation date
+    default: Date.now,
   },
 });
 
