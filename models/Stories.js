@@ -1,25 +1,27 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const storySchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // assuming your user model is named "User"
+    ref: 'User', // or however you're identifying users
     required: true,
   },
-  mediaUrl: {
-    type: String, // image/video URL or plain text content
-    required: true,
-  },
+  mediaUrl: String,
   type: {
     type: String,
-    enum: ["image", "video", "text"],
+    enum: ['image', 'video', 'text'],
     required: true,
   },
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 86400, // expires after 24 hours (60*60*24 seconds)
   },
+  expiresAt: {
+    type: Date,
+    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from creation
+  }
 });
 
-module.exports = mongoose.model("Story", storySchema);
+storySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+module.exports = mongoose.model('Story', storySchema);
