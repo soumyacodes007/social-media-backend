@@ -7,7 +7,7 @@ require("dotenv").config();
 const serverless = require("serverless-http");
 
 const Chat = require("../models/chat");
-const Stories = require("./models/Stories");
+const Stories = require("../models/Stories");
 const Post = require("../models/post");
 const Note = require("../models/note");
 
