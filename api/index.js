@@ -4,10 +4,11 @@ const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const cors = require("cors");
 require("dotenv").config();
-const serverless = require("serverless-http");
+// The serverless-http module is no longer needed, but it's okay to leave the require statement.
+// const serverless = require("serverless-http"); 
 
 const Chat = require("../models/chat");
-const Stories = require("../models/Stories");
+const Story = require("../models/Stories");
 const Post = require("../models/post");
 const Note = require("../models/note");
 
@@ -64,7 +65,7 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Routes (exactly the same logic you had)
+// --- Routes ---
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Welcome to the Social Media API. It is live and running." });
 });
@@ -230,17 +231,12 @@ app.get("/api/stories", async (req, res) => {
   }
 });
 
-// Local development only (optional)
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-  });
-}
 
-// Vercel serverless export
+// ===================================================================
+// START THE SERVER - This is the corrected block for Render
+// ===================================================================
+const PORT = process.env.PORT || 3001;
 
-module.exports = serverless(app);
-
-
-
+app.listen(PORT, () => {
+  console.log(`✅ Server is listening on port ${PORT}`);
+});
