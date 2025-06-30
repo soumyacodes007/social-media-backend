@@ -230,7 +230,7 @@ res.status(500).json({ error: err.message });
 // GET all posts2
 app.get("/api/posts2", async (req, res) => {
   try {
-    const posts = await Post2.find().sort({ createdAt: -1 }); // <-- use Post2
+    const posts2 = await Post2.find().sort({ createdAt: -1 }); // <-- use Post2
     res.status(200).json(posts);
   } catch (error) {
     res.status(500).json({ message: "Error fetching posts2", error: error.message });
