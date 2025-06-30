@@ -228,9 +228,10 @@ res.status(500).json({ error: err.message });
 }
 });
 // GET all posts2
+// GET all posts2
 app.get("/api/posts2", async (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1 });
+    const posts = await Post2.find().sort({ createdAt: -1 }); // <-- use Post2
     res.status(200).json(posts);
   } catch (error) {
     res.status(500).json({ message: "Error fetching posts2", error: error.message });
@@ -248,7 +249,7 @@ app.post("/api/posts2", upload.single("image"), async (req, res) => {
       imageUrl = result.secure_url;
     }
 
-    const newPost = new Post({ ...req.body, imageUrl });
+    const newPost = new Post2({ ...req.body, imageUrl }); // <-- use Post2
     const savedPost = await newPost.save();
     res.status(201).json(savedPost);
   } catch (error) {
@@ -259,7 +260,7 @@ app.post("/api/posts2", upload.single("image"), async (req, res) => {
 // DELETE a specific post2 by ID
 app.delete("/api/posts2/:id", async (req, res) => {
   try {
-    const deletedPost = await Post.findByIdAndDelete(req.params.id);
+    const deletedPost = await Post2.findByIdAndDelete(req.params.id); // <-- use Post2
     if (!deletedPost) return res.status(404).json({ message: "Post2 not found." });
     res.status(200).json({ message: "Post2 deleted successfully.", deletedPost });
   } catch (error) {
