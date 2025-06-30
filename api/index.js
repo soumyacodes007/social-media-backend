@@ -228,7 +228,52 @@ res.json(stories);
 res.status(500).json({ error: err.message });
 }
 });
-// GET all posts2
+// GET all uploads
+app.get("/api/uploads", async (req, res) => {
+  try {
+    const uploads = await Upload.find().sort({ uploadedAt: -1 });
+    res.status(200).json(uploads);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching uploads", error: error.message });
+  }
+});
+
+// POST a new upload
+app.post("/api/uploads", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded." });
+
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: "uploads",
+      resource_type: "auto",
+    });
+
+    const newUpload = await Upload.create({
+      filename: req.file.originalname,
+      url: result.secure_url,
+      uploadedAt: new Date(),
+    });
+
+    res.status(201).json(newUpload);
+  } catch (error) {
+    res.status(500).json({ message: "Error uploading file", error: error.message });
+  }
+});
+
+// DELETE an upload by ID
+app.delete("/api/uploads/:id", async (req, res) => {
+  try {
+    const deleted = await Upload.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Upload not found." });
+
+    res.status(200).json({ message: "Upload deleted successfully.", deleted });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting upload", error: error.message });
+  }
+});
 
 // ===================================================================
 // START THE SERVER - This is the corrected block for Render
