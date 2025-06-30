@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const postSchema = new mongoose.Schema({
+const uploadSchema = new mongoose.Schema({
  imageUrl: {
     type: String,
     required: false,
