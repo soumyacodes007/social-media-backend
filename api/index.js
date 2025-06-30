@@ -243,7 +243,7 @@ app.get("/api/uploads", async (req, res) => {
 
 
 // POST a new upload
-app.post("/api/uploads", upload.single("file"), async (req, res) => {
+app.post("/api/uploads", upload.single("media"), async (req, res) => {
   try {
     let url = "";
     if (req.file) {
