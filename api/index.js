@@ -231,6 +231,45 @@ app.get("/api/stories", async (req, res) => {
   }
 });
 
+// GET all posts2
+app.get("/api/posts2", async (req, res) => {
+  try {
+    const posts = await Post.find().sort({ createdAt: -1 });
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching posts2", error: error.message });
+  }
+});
+
+// POST a new post2 with optional image
+app.post("/api/posts2", upload.single("image"), async (req, res) => {
+  try {
+    let imageUrl = "";
+    if (req.file) {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+      const result = await cloudinary.uploader.upload(dataURI, { folder: "social_media_posts2" });
+      imageUrl = result.secure_url;
+    }
+
+    const newPost = new Post({ ...req.body, imageUrl });
+    const savedPost = await newPost.save();
+    res.status(201).json(savedPost);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating post2", error: error.message });
+  }
+});
+
+// DELETE a specific post2 by ID
+app.delete("/api/posts2/:id", async (req, res) => {
+  try {
+    const deletedPost = await Post.findByIdAndDelete(req.params.id);
+    if (!deletedPost) return res.status(404).json({ message: "Post2 not found." });
+    res.status(200).json({ message: "Post2 deleted successfully.", deletedPost });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting post2", error: error.message });
+  }
+});
 
 // ===================================================================
 // START THE SERVER - This is the corrected block for Render
