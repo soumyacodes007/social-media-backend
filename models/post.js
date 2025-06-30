@@ -15,7 +15,7 @@ const postSchema = new mongoose.Schema({
   },
   name: {
     type: String,
-    required: true,
+    required: false,
   },
   bio: {
     type: String,
@@ -35,7 +35,7 @@ const postSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: true,
+    required: false,
     match: [/^\d{10}$/, "Phone number must be 10 digits"],
   },
   password: {
@@ -44,7 +44,7 @@ const postSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
+    required: false,
     match: [/^\S+@\S+\.\S+$/, "Invalid email address"],
   },
   gender: {
