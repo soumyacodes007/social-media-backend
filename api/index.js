@@ -231,49 +231,69 @@ res.status(500).json({ error: err.message });
 // GET all uploads
 app.get("/api/uploads", async (req, res) => {
   try {
-    const uploads = await Upload.find().sort({ uploadedAt: -1 });
+    const uploads = await Upload.find()
+      .sort({ uploadedAt: -1 })
+      .populate("uploader", "name profilePic"); // optional, if you have users
+
     res.status(200).json(uploads);
   } catch (error) {
     res.status(500).json({ message: "Error fetching uploads", error: error.message });
   }
 });
 
+
 // POST a new upload
 app.post("/api/uploads", upload.single("file"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded." });
+    let url = "";
+    if (req.file) {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: "uploads",
+        resource_type: "auto", // handles images, videos, audio, etc.
+      });
+      url = result.secure_url;
+    }
 
-    const b64 = Buffer.from(req.file.buffer).toString("base64");
-    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-
-    const result = await cloudinary.uploader.upload(dataURI, {
-      folder: "uploads",
-      resource_type: "auto",
-    });
-
+    const { filename, uploader } = req.body;
     const newUpload = await Upload.create({
-      filename: req.file.originalname,
-      url: result.secure_url,
+      filename: filename || req.file.originalname,
+      url,
       uploadedAt: new Date(),
+      uploader, // optional: track user who uploaded
     });
 
     res.status(201).json(newUpload);
   } catch (error) {
-    res.status(500).json({ message: "Error uploading file", error: error.message });
+    res.status(500).json({ message: "Upload failed", error: error.message });
   }
 });
+
 
 // DELETE an upload by ID
 app.delete("/api/uploads/:id", async (req, res) => {
   try {
-    const deleted = await Upload.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: "Upload not found." });
+    const upload = await Upload.findById(req.params.id);
+    if (!upload) return res.status(404).json({ message: "Upload not found." });
 
-    res.status(200).json({ message: "Upload deleted successfully.", deleted });
+    // Extract Cloudinary public ID (if you want to delete from Cloudinary)
+    const urlParts = upload.url.split("/");
+    const publicIdWithExt = urlParts[urlParts.length - 1];
+    const publicId = `uploads/${publicIdWithExt.split(".")[0]}`; // assumes folder = 'uploads'
+
+    // Delete from Cloudinary
+    await cloudinary.uploader.destroy(publicId, { resource_type: "auto" });
+
+    // Delete from DB
+    await Upload.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ message: "Upload deleted successfully." });
   } catch (error) {
     res.status(500).json({ message: "Error deleting upload", error: error.message });
   }
 });
+
 
 // ===================================================================
 // START THE SERVER - This is the corrected block for Render
