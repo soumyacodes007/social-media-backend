@@ -228,7 +228,6 @@ res.status(500).json({ error: err.message });
 }
 });
 // GET all posts2
-// GET all posts2
 app.get("/api/posts2", async (req, res) => {
   try {
     const posts = await Post2.find().sort({ createdAt: -1 }); // <-- use Post2
