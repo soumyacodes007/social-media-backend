@@ -262,7 +262,7 @@ app.post("/api/uploads", upload.single("media"), async (req, res) => {
     const uploadData = {
       filename: filename || req.file.originalname,
       uploadedAt: new Date(),
-      uploader,
+      uploaderPhone: req.body.uploaderPhone,
     };
 
     if (fileType.startsWith("image")) uploadData.imageUrl = fileUrl;
