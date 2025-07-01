@@ -233,7 +233,7 @@ app.get("/api/uploads", async (req, res) => {
   try {
     const uploads = await Upload.find()
       .sort({ uploadedAt: -1 })
-      .populate("uploader", "name profilePic"); // optional, if you have users
+      // .populate("uploader", "name profilePic"); // optional, if you have users
 
     res.status(200).json(uploads);
   } catch (error) {
