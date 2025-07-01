@@ -244,39 +244,42 @@ app.get("/api/uploads", async (req, res) => {
 
 // POST a new upload
 app.post("/api/uploads", upload.single("media"), async (req, res) => {
-  try {
-    let fileUrl = "";
-    let fileType = "";
-    if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-      const result = await cloudinary.uploader.upload(dataURI, {
-        folder: "uploads",
-        resource_type: "auto",
-      });
-      fileUrl = result.secure_url;
-      fileType = req.file.mimetype;
-    }
-
-    const { filename, uploader, caption } = req.body; // <-- get caption
-    const uploadData = {
-      filename: filename || (req.file ? req.file.originalname : undefined),
-      uploadedAt: new Date(),
-      uploaderPhone: req.body.uploaderPhone,
-      caption: caption || "", // <-- save caption
-    };
-
-    if (fileType.startsWith("image")) uploadData.imageUrl = fileUrl;
-    else if (fileType.startsWith("video")) uploadData.videoUrl = fileUrl;
-    else if (fileType.startsWith("audio")) uploadData.audioUrl = fileUrl;
-
-    const newUpload = await Upload.create(uploadData);
-
-    res.status(201).json(newUpload);
-  } catch (error) {
-    res.status(500).json({ message: "Upload failed", error: error.message });
-  }
+try {
+let fileUrl = "";
+let fileType = "";
+if (req.file) {
+const b64 = Buffer.from(req.file.buffer).toString("base64");
+const dataURI = data:${req.file.mimetype};base64,${b64};
+const result = await cloudinary.uploader.upload(dataURI, {
+folder: "uploads",
+resource_type: "auto",
 });
+fileUrl = result.secure_url;
+fileType = req.file.mimetype;
+}
+
+const { filename, uploader } = req.body;
+const uploadData = {
+  filename: filename || req.file.originalname,
+  uploadedAt: new Date(),
+  uploaderPhone: req.body.uploaderPhone,
+};
+
+if (fileType.startsWith("image")) uploadData.imageUrl = fileUrl;
+else if (fileType.startsWith("video")) uploadData.videoUrl = fileUrl;
+else if (fileType.startsWith("audio")) uploadData.audioUrl = fileUrl;
+
+const newUpload = await Upload.create(uploadData);
+
+res.status(201).json(newUpload);
+
+
+} catch (error) {
+res.status(500).json({ message: "Upload failed", error: error.message });
+}
+});
+
+
 
 
 // DELETE an upload by ID
