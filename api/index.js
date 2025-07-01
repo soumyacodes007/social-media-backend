@@ -245,24 +245,31 @@ app.get("/api/uploads", async (req, res) => {
 // POST a new upload
 app.post("/api/uploads", upload.single("media"), async (req, res) => {
   try {
-    let url = "";
+    let fileUrl = "";
+    let fileType = "";
     if (req.file) {
       const b64 = Buffer.from(req.file.buffer).toString("base64");
       const dataURI = `data:${req.file.mimetype};base64,${b64}`;
       const result = await cloudinary.uploader.upload(dataURI, {
         folder: "uploads",
-        resource_type: "auto", // handles images, videos, audio, etc.
+        resource_type: "auto",
       });
-      url = result.secure_url;
+      fileUrl = result.secure_url;
+      fileType = req.file.mimetype;
     }
 
     const { filename, uploader } = req.body;
-    const newUpload = await Upload.create({
+    const uploadData = {
       filename: filename || req.file.originalname,
-      url,
       uploadedAt: new Date(),
-      uploader, // optional: track user who uploaded
-    });
+      uploader,
+    };
+
+    if (fileType.startsWith("image")) uploadData.imageUrl = fileUrl;
+    else if (fileType.startsWith("video")) uploadData.videoUrl = fileUrl;
+    else if (fileType.startsWith("audio")) uploadData.audioUrl = fileUrl;
+
+    const newUpload = await Upload.create(uploadData);
 
     res.status(201).json(newUpload);
   } catch (error) {
