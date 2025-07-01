@@ -258,11 +258,12 @@ app.post("/api/uploads", upload.single("media"), async (req, res) => {
       fileType = req.file.mimetype;
     }
 
-    const { filename, uploader } = req.body;
+    const { filename, uploader, caption } = req.body; // <-- get caption
     const uploadData = {
-      filename: filename || req.file.originalname,
+      filename: filename || (req.file ? req.file.originalname : undefined),
       uploadedAt: new Date(),
       uploaderPhone: req.body.uploaderPhone,
+      caption: caption || "", // <-- save caption
     };
 
     if (fileType.startsWith("image")) uploadData.imageUrl = fileUrl;
