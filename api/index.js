@@ -301,7 +301,33 @@ app.delete("/api/uploads/:id", async (req, res) => {
   }
 });
 
+app.post("/api/uploads/profile-image", upload.single("profileImage"), async (req, res) => {
+  try {
+    let fileUrl = "";
+    if (req.file) {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: "profile_images",
+        resource_type: "image",
+      });
+      fileUrl = result.secure_url;
+    }
 
+    // Save a new Upload entry with profileImage for this user
+    const uploadData = {
+      uploaderPhone: req.body.phone,
+      profileImage: fileUrl,
+      uploadedAt: new Date(),
+    };
+
+    const newProfileUpload = await Upload.create(uploadData);
+
+    res.status(201).json(newProfileUpload);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update profile image", error: error.message });
+  }
+});
 // ===================================================================
 // START THE SERVER - This is the corrected block for Render
 // ===================================================================
