@@ -416,6 +416,7 @@ app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req,
 // ===================================================================
 // START THE SERVER - This is the corrected block for Render
 // ===================================================================
+const PORT = process.env.PORT || 3001;
 
 
 http.listen(PORT, () => {
