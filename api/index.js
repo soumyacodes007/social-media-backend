@@ -183,25 +183,28 @@ res.status(500).json({ message: "Server error", error: err.message });
 });
 
 // Delete a single message between two users based on timestamp
-app.delete("/api/chats/:user1/:user2/messages/:timestamp", async (req, res) => {
-  const participants = [req.params.user1, req.params.user2].sort();
-  const timestamp = new Date(Number(req.params.timestamp)); // convert from string to Date
+app.delete("/api/chats/:user1/:user2/:index", async (req, res) => {
+  const { user1, user2, index } = req.params;
+  const participants = [user1, user2].sort();
 
   try {
     const chat = await Chat.findOne({ participants });
+
     if (!chat) return res.status(404).json({ message: "Chat not found." });
 
-    chat.messages = chat.messages.filter(
-      (msg) => new Date(msg.timestamp).getTime() !== timestamp.getTime()
-    );
+    if (!chat.messages[index]) {
+      return res.status(400).json({ message: "Invalid message index." });
+    }
 
+    chat.messages.splice(index, 1);
     await chat.save();
 
     res.status(200).json({ message: "Message deleted successfully." });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
 
 
 app.get("/api/chats/:userPhone", async (req, res) => {
