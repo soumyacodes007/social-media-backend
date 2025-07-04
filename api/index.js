@@ -205,6 +205,36 @@ app.delete("/api/chats/:user1/:user2/:index", async (req, res) => {
   }
 });
 
+const User = require("./models/user");
+
+// Update user status
+app.post("/api/user/status", async (req, res) => {
+  const { phone, isOnline } = req.body;
+  try {
+    const update = { isOnline };
+    if (!isOnline) update.lastSeen = new Date();
+
+    const user = await User.findOneAndUpdate(
+      { phone },
+      update,
+      { new: true, upsert: true }
+    );
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Status update failed", error: err.message });
+  }
+});
+
+// Get a user's status
+app.get("/api/users/:phone", async (req, res) => {
+  try {
+    const user = await User.findOne({ phone: req.params.phone });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch user", error: err.message });
+  }
+});
 
 
 app.get("/api/chats/:userPhone", async (req, res) => {
