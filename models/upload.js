@@ -8,7 +8,8 @@ const uploadSchema = new mongoose.Schema({
   caption: { type: String, required: false },
   music: { type: String, required: false },
   uploadedAt: { type: Date, default: Date.now },
-  uploaderPhone: { type: String, required: true }, // <-- Add this line
+  uploaderPhone: { type: String, required: true },
+  profileImage: { type: String, required: false }, 
 });
 
 module.exports = mongoose.model('Upload', uploadSchema);
