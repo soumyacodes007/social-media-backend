@@ -21,6 +21,12 @@ const User = require("./models/user"); // ✅ Import it
 
 const app = express();
 
+const server = http.createServer(app);
+const io = new Server(server, {         
+  cors: {
+    origin: "*", 
+  },
+});
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -423,6 +429,7 @@ app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req,
 const PORT = process.env.PORT || 3001;
 
 
-http.listen(PORT, () => {
-  console.log(`✅ Socket server listening on ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`✅ API aur Socket Server port ${PORT} par chal raha hai`);
 });
+
