@@ -301,7 +301,7 @@ app.delete("/api/uploads/:id", async (req, res) => {
   }
 });
 
-app.post("/api/uploads/profile-image", upload.single("profileImage"), async (req, res) => {
+app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req, res) => {
   try {
     let fileUrl = "";
     if (req.file) {
