@@ -66,7 +66,27 @@ console.error("DB middleware error:", error);
 res.status(503).json({ message: "Service Unavailable: Could not connect to DB." });
 }
 });
+io.on("connection", (socket) => {
+  console.log("✅ New user connected:", socket.id);
 
+  socket.on("join", (phone) => {
+    socket.join(phone);
+    console.log(`User with phone ${phone} joined room`);
+  });
+
+  socket.on("send_message", (data) => {
+    const { sender, receiver, text } = data;
+    io.to(receiver).emit("receive_message", {
+      sender,
+      text,
+      timestamp: Date.now(),
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
+  });
+});
 // --- Routes ---
 app.get("/", (req, res) => {
 res.status(200).json({ message: "Welcome to the Social Media API. It is live and running." });
@@ -398,7 +418,7 @@ app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req,
 // ===================================================================
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
-// eta baptics er vetor hobe
-console.log(`✅ Server is listening on port ${PORT}`);
+const PORT = process.env.PORT || 3001;
+http.listen(PORT, () => {
+  console.log(`✅ Socket server listening on ${PORT}`);
 });
