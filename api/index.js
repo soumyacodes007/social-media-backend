@@ -1,7 +1,7 @@
 const express = require("express");
 
-const http = require("http"); // 
-const { Server } = require("socket.io"); // 
+const http = require("http"); // ✅ YEH ADD KAREIN
+const { Server } = require("socket.io"); // ✅ YEH ADD KAREIN
 // ...baaki ke imports
 const mongoose = require("mongoose");
 const multer = require("multer");
@@ -112,19 +112,36 @@ res.status(500).json({ message: "Error fetching posts", error: error.message });
 });
 
 app.post("/api/posts", upload.single("image"), async (req, res) => {
-try {
-let imageUrl = "";
-if (req.file) {
-const b64 = Buffer.from(req.file.buffer).toString("base64");
-const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
-const result = await cloudinary.uploader.upload(dataURI, { folder: "social_media_posts" });
-imageUrl = result.secure_url;
-}
+  try {
+    let imageUrl = "";
+    if (req.file) {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: "social_media_posts",
+      });
+      imageUrl = result.secure_url;
+    }
 
-} catch (error) {
-res.status(500).json({ message: "Error creating post", error: error.message });
-}
+    const { caption, creator } = req.body;
+
+    const newPost = new Post({
+      caption,
+      imageUrl,
+      creator,
+      createdAt: new Date(),
+    });
+
+    const savedPost = await newPost.save();
+    res.status(201).json(savedPost);
+
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error creating post", error: error.message });
+  }
 });
+
 
 app.patch("/api/posts/:id", async (req, res) => {
 try {
@@ -426,10 +443,9 @@ app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req,
 // ===================================================================
 // START THE SERVER - This is the corrected block for Render
 // ===================================================================
+
+
 const PORT = process.env.PORT || 3001;
-
-
 server.listen(PORT, () => {
-  console.log(`✅ API aur Socket Server port ${PORT} par chal raha hai`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
-
