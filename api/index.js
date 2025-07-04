@@ -158,19 +158,39 @@ res.status(500).json({ message: "Failed to delete all chats", error: error.messa
 });
 
 app.post("/api/chats", async (req, res) => {
-const { sender, receiver, text } = req.body;
-const participants = sender === receiver ? [sender] : [sender, receiver].sort();
+  const { sender, receiver, text } = req.body;
 
-try {
-let chat = await Chat.findOne({ participants });
-if (!chat) chat = new Chat({ participants, messages: [] });
-chat.messages.push({ sender, text });
-const saved = await chat.save();
-res.status(200).json(saved);
-} catch (error) {
-res.status(500).json({ message: "Server error", error: error.message });
-}
+  if (!sender || !receiver || !text) {
+    return res.status(400).json({ message: "Sender, receiver, and text are required." });
+  }
+
+  const participants = sender === receiver ? [sender] : [sender, receiver].sort();
+
+  try {
+    let chat = await Chat.findOne({ participants });
+
+    if (!chat) {
+      // Create a new chat if it doesn't exist
+      chat = new Chat({ participants, messages: [] });
+    }
+
+    // Extra safety: make sure messages is always an array
+    if (!Array.isArray(chat.messages)) {
+      chat.messages = [];
+    }
+
+    // Push the new message
+    chat.messages.push({ sender, text });
+
+    // Save and return
+    const saved = await chat.save();
+    res.status(200).json(saved);
+  } catch (error) {
+    console.error("❌ Error saving chat:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
+
 
 app.delete("/api/chats/:user1/:user2", async (req, res) => {
 const participants = [req.params.user1, req.params.user2].sort();
