@@ -76,6 +76,8 @@ console.error("DB middleware error:", error);
 res.status(503).json({ message: "Service Unavailable: Could not connect to DB." });
 }
 });
+
+
 io.on("connection", (socket) => {
   console.log("✅ New user connected:", socket.id);
 
@@ -84,12 +86,12 @@ io.on("connection", (socket) => {
     console.log(`User with phone ${phone} joined room`);
   });
 
-  socket.on("send_message", (data) => {
-    const { sender, receiver, text } = data;
+  socket.on("sendMessage", (data) => {
+    const { sender, receiver, text, timestamp } = data;
     io.to(receiver).emit("receive_message", {
       sender,
       text,
-      timestamp: Date.now(),
+      timestamp: timestamp || Date.now(),
     });
   });
 
@@ -97,6 +99,7 @@ io.on("connection", (socket) => {
     console.log("❌ User disconnected:", socket.id);
   });
 });
+
 // --- Routes ---
 app.get("/", (req, res) => {
 res.status(200).json({ message: "Welcome to the Social Media API. It is live and running." });
