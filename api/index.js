@@ -418,7 +418,7 @@ app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req,
 // ===================================================================
 const PORT = process.env.PORT || 3001;
 
-const PORT = process.env.PORT || 3001;
+
 http.listen(PORT, () => {
   console.log(`✅ Socket server listening on ${PORT}`);
 });
