@@ -1,12 +1,17 @@
-// models/user.js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
-  phone: { type: String, unique: true },
-  name: String,
-  profileImage: String,
-  isOnline: { type: Boolean, default: false },
-  lastSeen: { type: Date, default: Date.now },
+const chatSchema = new mongoose.Schema({
+  participants: [String], // userPhone numbers
+  messages: [
+    {
+      sender: String,      // sender phone
+      text: String,        // message content
+      timestamp: {
+        type: Date,
+        default: Date.now
+      }
+    }
+  ]
 }, { timestamps: true });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('Chat', chatSchema);
