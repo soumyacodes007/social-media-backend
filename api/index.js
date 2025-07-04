@@ -12,6 +12,7 @@ const Story = require("../models/Stories");
 const Post = require("../models/post");
 const Note = require("../models/note");
 const Upload = require("../models/upload");
+const User = require("./models/user"); // ✅ Import it
 
 
 const app = express();
