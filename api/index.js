@@ -182,6 +182,28 @@ res.status(500).json({ message: "Server error", error: err.message });
 }
 });
 
+// Delete a single message between two users based on timestamp
+app.delete("/api/chats/:user1/:user2/messages/:timestamp", async (req, res) => {
+  const participants = [req.params.user1, req.params.user2].sort();
+  const timestamp = new Date(Number(req.params.timestamp)); // convert from string to Date
+
+  try {
+    const chat = await Chat.findOne({ participants });
+    if (!chat) return res.status(404).json({ message: "Chat not found." });
+
+    chat.messages = chat.messages.filter(
+      (msg) => new Date(msg.timestamp).getTime() !== timestamp.getTime()
+    );
+
+    await chat.save();
+
+    res.status(200).json({ message: "Message deleted successfully." });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+
 app.get("/api/chats/:userPhone", async (req, res) => {
 const { userPhone } = req.params;
 try {
