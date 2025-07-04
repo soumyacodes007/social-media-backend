@@ -81,20 +81,41 @@ res.status(503).json({ message: "Service Unavailable: Could not connect to DB." 
 io.on("connection", (socket) => {
   console.log("✅ New user connected:", socket.id);
 
-  socket.on("join", (phone) => {
-    socket.join(phone);
-    console.log(`User with phone ${phone} joined room`);
+  // Join room by combined roomId (sorted phones)
+  socket.on("join", (roomId) => {
+    socket.join(roomId);
+    console.log(`📲 Joined room: ${roomId}`);
   });
 
-  socket.on("sendMessage", (data) => {
-    const { sender, receiver, text, timestamp } = data;
-    io.to(receiver).emit("receive_message", {
-      sender,
-      text,
-      timestamp: timestamp || Date.now(),
-    });
+  // Send + Save message
+  socket.on("sendMessage", async (data) => {
+    const { sender, receiver, text } = data;
+    const timestamp = Date.now();
+    const participants = sender === receiver ? [sender] : [sender, receiver].sort();
+    const roomId = participants.join("-");
+
+    try {
+      // 1. Find or create chat
+      let chat = await Chat.findOne({ participants });
+
+      if (!chat) {
+        chat = new Chat({ participants, messages: [] });
+      }
+
+      // 2. Add new message
+      const newMessage = { sender, text, timestamp };
+      chat.messages.push(newMessage);
+      await chat.save();
+
+      // 3. Emit to both users in the room
+      io.to(roomId).emit("receive_message", newMessage);
+      console.log(`📤 Message sent to room ${roomId}`);
+    } catch (err) {
+      console.error("❌ Error saving chat message:", err.message);
+    }
   });
 
+  // Cleanup
   socket.on("disconnect", () => {
     console.log("❌ User disconnected:", socket.id);
   });
