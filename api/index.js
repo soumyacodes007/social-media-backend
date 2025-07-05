@@ -607,7 +607,93 @@ app.get("/api/posts/:postId/shares", async (req, res) => {
   }
 });
 
+// --- FOLLOW / UNFOLLOW A USER ---
+app.post("/api/users/follow", async (req, res) => {
+  try {
+    // The user who is clicking the "follow" button
+    const { followerId } = req.body;
+    // The user whose profile is being viewed and followed
+    const { followingId } = req.body;
 
+    if (!followerId || !followingId) {
+      return res.status(400).json({ message: "followerId and followingId are required." });
+    }
+    if (followerId === followingId) {
+      return res.status(400).json({ message: "Users cannot follow themselves." });
+    }
+
+    const follower = await User.findById(followerId);
+    const userToFollow = await User.findById(followingId);
+
+    if (!follower || !userToFollow) {
+      return res.status(404).json({ message: "One or both users not found." });
+    }
+
+    // Check if the follower is already following the user
+    const isAlreadyFollowing = follower.following.includes(followingId);
+
+    if (isAlreadyFollowing) {
+      // --- IF YES, THEN UNFOLLOW ---
+      // 1. Remove userToFollow from the follower's 'following' list
+      follower.following.pull(followingId);
+      // 2. Remove follower from the userToFollow's 'followers' list
+      userToFollow.followers.pull(followerId);
+
+      await follower.save();
+      await userToFollow.save();
+
+      return res.status(200).json({ message: "User unfollowed successfully." });
+
+    } else {
+      // --- IF NO, THEN FOLLOW ---
+      // 1. Add userToFollow to the follower's 'following' list
+      follower.following.push(followingId);
+      // 2. Add follower to the userToFollow's 'followers' list
+      userToFollow.followers.push(followerId);
+
+      await follower.save();
+      await userToFollow.save();
+
+      return res.status(200).json({ message: "User followed successfully." });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// --- GET A USER'S LIST OF FOLLOWERS ---
+app.get("/api/users/:id/followers", async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Find the user and populate their followers list
+    // We only get the 'name' and 'profileImage' of each follower
+    const user = await User.findById(id).populate("followers", "name profileImage");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json(user.followers);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// --- GET THE LIST OF USERS A USER IS FOLLOWING ---
+app.get("/api/users/:id/following", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id).populate("following", "name profileImage");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json(user.following);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 
 
 
