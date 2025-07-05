@@ -403,7 +403,7 @@ app.post("/api/uploads", upload.single("media"), async (req, res) => {
     const { filename, caption } = req.body;
 
     const uploadData = {
-      filename: filename || req.file.originalname || "file",
+      filename: filename || (req.file?.originalname || "media"),
       uploadedAt: new Date(),
       uploaderPhone: req.body.uploaderPhone || "unknown",
       caption: caption || "",
