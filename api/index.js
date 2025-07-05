@@ -286,7 +286,8 @@ app.delete("/api/chats/:user1/:user2/:index", async (req, res) => {
   }
 });
 
-const User = require("./models/user");
+
+
 
 // Update user status
 app.post("/api/user/status", async (req, res) => {
