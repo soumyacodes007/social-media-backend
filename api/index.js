@@ -17,7 +17,7 @@ const Post = require("../models/post");
 const Note = require("../models/note");
 const Upload = require("../models/upload");
 const User = require("./models/user"); // ✅ Import it
-
+const Comment = require("./models/comment");
 
 const app = express();
 
@@ -467,7 +467,30 @@ app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req,
   }
 });
 
-// routes/comments.js
+// Get comments for a post
+app.get("/api/comments/:postId", async (req, res) => {
+  try {
+    const comments = await Comment.find({ postId: req.params.postId }).sort({ createdAt: -1 });
+    res.status(200).json(comments);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching comments", error: error.message });
+  }
+});
+
+// Post a new comment
+app.post("/api/comments", async (req, res) => {
+  try {
+    const { postId, userId, text } = req.body;
+    if (!postId || !userId || !text) {
+      return res.status(400).json({ message: "postId, userId and text are required." });
+    }
+
+    const newComment = await Comment.create({ postId, userId, text });
+    res.status(201).json(newComment);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating comment", error: error.message });
+  }
+});
 
 
 // ===================================================================
