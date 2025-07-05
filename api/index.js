@@ -466,6 +466,34 @@ app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req,
     res.status(500).json({ message: "Failed to update profile image", error: error.message });
   }
 });
+
+// routes/comments.js
+const express = require("express");
+const router = express.Router();
+const Comment = require("../models/comment");
+
+router.post("/", async (req, res) => {
+  const { postId, userId, comment } = req.body;
+  try {
+    const newComment = new Comment({ postId, userId, comment });
+    await newComment.save();
+    res.status(201).json(newComment);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to save comment" });
+  }
+});
+
+router.get("/:postId", async (req, res) => {
+  try {
+    const comments = await Comment.find({ postId: req.params.postId }).populate("userId", "username profileImage");
+    res.json(comments);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch comments" });
+  }
+});
+
+module.exports = router;
+
 // ===================================================================
 // START THE SERVER - This is the corrected block for Render
 // ===================================================================
