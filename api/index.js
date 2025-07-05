@@ -469,6 +469,7 @@ app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req,
 });
 
 // Get comments for a post
+
 app.get("/api/comments/:postId", async (req, res) => {
   const { postId } = req.params;
 
@@ -479,14 +480,15 @@ app.get("/api/comments/:postId", async (req, res) => {
   }
 
   try {
-    const comments = await Comment.find({ postId }).sort({ createdAt: -1 });
+    const comments = await Comment.find({ postId })
+      .sort({ createdAt: -1 })
+      .populate("userId", "name profilePic"); // ✅ ADD THIS LINE TO GET USER INFO
+
     res.status(200).json(comments);
   } catch (error) {
     res.status(500).json({ message: "Error fetching comments", error: error.message });
   }
 });
-
-
 
 // Post a new comment
 app.post("/api/comments", async (req, res) => {
