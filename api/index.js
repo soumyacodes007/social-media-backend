@@ -383,28 +383,34 @@ app.post("/api/uploads", upload.single("media"), async (req, res) => {
   try {
     let fileUrl = "";
     let fileType = "";
+
     if (req.file) {
       const b64 = Buffer.from(req.file.buffer).toString("base64");
       const dataURI = `data:${req.file.mimetype};base64,${b64}`;
       const result = await cloudinary.uploader.upload(dataURI, {
         folder: "uploads",
-        resource_type: "auto",
+        resource_type: "auto", // this supports image, video, audio
       });
       fileUrl = result.secure_url;
       fileType = req.file.mimetype;
     }
 
-    const { filename, uploader, caption } = req.body; // <-- get caption
+    const { filename, uploader, caption } = req.body;
+
     const uploadData = {
       filename: filename || (req.file ? req.file.originalname : undefined),
       uploadedAt: new Date(),
       uploaderPhone: req.body.uploaderPhone,
-      caption: caption || "", // <-- save caption
+      caption: caption || "",
     };
 
-    if (fileType.startsWith("image")) uploadData.imageUrl = fileUrl;
-    else if (fileType.startsWith("video")) uploadData.videoUrl = fileUrl;
-    else if (fileType.startsWith("audio")) uploadData.audioUrl = fileUrl;
+    if (fileType.startsWith("image")) {
+      uploadData.imageUrl = fileUrl;
+    } else if (fileType.startsWith("video")) {
+      uploadData.videoUrl = fileUrl;
+    } else if (fileType.startsWith("audio")) {
+      uploadData.audioUrl = fileUrl;
+    }
 
     const newUpload = await Upload.create(uploadData);
 
@@ -413,6 +419,7 @@ app.post("/api/uploads", upload.single("media"), async (req, res) => {
     res.status(500).json({ message: "Upload failed", error: error.message });
   }
 });
+
 
 // DELETE an upload by ID
 app.delete("/api/uploads/:id", async (req, res) => {
