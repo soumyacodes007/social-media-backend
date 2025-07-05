@@ -379,54 +379,41 @@ app.get("/api/uploads", async (req, res) => {
 
 
 // POST a new upload
+
 app.post("/api/uploads", upload.single("media"), async (req, res) => {
   try {
-    // Validate file exists
-    if (!req.file || !req.file.buffer || !req.file.mimetype) {
-      return res.status(400).json({ message: "No valid media file uploaded." });
+    let fileUrl = "";
+    let fileType = "";
+    if (req.file) {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: "uploads",
+        resource_type: "auto",
+      });
+      fileUrl = result.secure_url;
+      fileType = req.file.mimetype;
     }
 
-    // Convert buffer to base64
-    const b64 = Buffer.from(req.file.buffer).toString("base64");
-    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(dataURI, {
-      folder: "uploads",
-      resource_type: "auto",
-    });
-
-    // Extract file type
-    const fileUrl = result.secure_url;
-    const fileType = req.file.mimetype;
-
-    const { filename, caption } = req.body;
-
+    const { filename, uploader, caption } = req.body; // <-- get caption
     const uploadData = {
-      filename: filename || (req.file?.originalname || "media"),
+      filename: filename || (req.file ? req.file.originalname : undefined),
       uploadedAt: new Date(),
-      uploaderPhone: req.body.uploaderPhone || "unknown",
-      caption: caption || "",
+      uploaderPhone: req.body.uploaderPhone,
+      caption: caption || "", // <-- save caption
     };
 
-    if (fileType.startsWith("image")) {
-      uploadData.imageUrl = fileUrl;
-    } else if (fileType.startsWith("video")) {
-      uploadData.videoUrl = fileUrl;
-    } else if (fileType.startsWith("audio")) {
-      uploadData.audioUrl = fileUrl;
-    } else {
-      return res.status(400).json({ message: "Unsupported media type." });
-    }
+    if (fileType.startsWith("image")) uploadData.imageUrl = fileUrl;
+    else if (fileType.startsWith("video")) uploadData.videoUrl = fileUrl;
+    else if (fileType.startsWith("audio")) uploadData.audioUrl = fileUrl;
 
     const newUpload = await Upload.create(uploadData);
+
     res.status(201).json(newUpload);
   } catch (error) {
-    console.error("Upload error:", error);
     res.status(500).json({ message: "Upload failed", error: error.message });
   }
 });
-
 
 
 // DELETE an upload by ID
