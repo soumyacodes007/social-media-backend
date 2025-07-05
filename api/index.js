@@ -520,6 +520,96 @@ app.get("/api/comments/test", (req, res) => {
   res.status(200).json({ msg: "✅ test route working" });
 });
 
+// Add these routes into your api/index.js file
+
+// --- LIKE / UNLIKE A POST (Using separate Like model) ---
+app.post("/api/like", async (req, res) => {
+  try {
+    const { postId, userId } = req.body;
+
+    if (!postId || !userId) {
+      return res.status(400).json({ message: "postId and userId are required." });
+    }
+
+    // Check if the like already exists
+    const existingLike = await Like.findOne({ postId, userId });
+
+    if (existingLike) {
+      // If it exists, UNLIKE by deleting the like document
+      await Like.findByIdAndDelete(existingLike._id);
+      res.status(200).json({ message: "Post unliked successfully." });
+    } else {
+      // If it doesn't exist, LIKE by creating a new like document
+      const newLike = new Like({ postId, userId });
+      await newLike.save();
+      res.status(201).json({ message: "Post liked successfully.", like: newLike });
+    }
+  } catch (error) {
+    // This will catch the duplicate key error if two requests try to like at the same time
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "Like already exists." });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// --- GET ALL LIKES FOR A POST (To get the count and list of users) ---
+app.get("/api/posts/:postId/likes", async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const likes = await Like.find({ postId }).populate("userId", "name profilePic");
+    // The total count is just the length of the array
+    const likeCount = likes.length;
+
+    res.status(200).json({
+      count: likeCount,
+      users: likes.map(like => like.userId) // Return a clean array of user objects
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// --- SHARE A POST (Using separate Share model) ---
+app.post("/api/share", async (req, res) => {
+  try {
+    const { postId, userId } = req.body;
+
+    if (!postId || !userId) {
+      return res.status(400).json({ message: "postId and userId are required." });
+    }
+
+    // Every share is a new event, so we just create a new document
+    const newShare = new Share({ postId, userId });
+    await newShare.save();
+
+    res.status(201).json({ message: "Post shared successfully.", share: newShare });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// --- GET SHARE COUNT FOR A POST ---
+app.get("/api/posts/:postId/shares", async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    // Use .countDocuments() for a very efficient way to get the total count
+    const shareCount = await Share.countDocuments({ postId });
+
+    res.status(200).json({ count: shareCount });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+
+
 
 // ===================================================================
 // START THE SERVER - This is the corrected block for Render
