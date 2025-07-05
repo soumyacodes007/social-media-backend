@@ -471,6 +471,8 @@ app.post("/api/uploads/profileimage", upload.single("profileImage"), async (req,
 app.get("/api/comments/:postId", async (req, res) => {
   const { postId } = req.params;
 
+  console.log("➡️  GET Comments for postId:", postId); // ✅ LOG
+
   if (!mongoose.Types.ObjectId.isValid(postId)) {
     return res.status(400).json({ message: "Invalid postId format." });
   }
@@ -484,10 +486,14 @@ app.get("/api/comments/:postId", async (req, res) => {
 });
 
 
+
 // Post a new comment
 app.post("/api/comments", async (req, res) => {
+  console.log("➡️  POST Comment Body:", req.body); // ✅ LOG
+
   try {
     const { postId, userId, text } = req.body;
+
     if (!postId || !userId || !text) {
       return res.status(400).json({ message: "postId, userId and text are required." });
     }
@@ -498,6 +504,7 @@ app.post("/api/comments", async (req, res) => {
     res.status(500).json({ message: "Error creating comment", error: error.message });
   }
 });
+
 
 
 // ===================================================================
