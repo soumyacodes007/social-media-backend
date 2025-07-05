@@ -505,6 +505,9 @@ app.post("/api/comments", async (req, res) => {
   }
 });
 
+app.get("/api/comments/test", (req, res) => {
+  res.status(200).json({ msg: "✅ test route working" });
+});
 
 
 // ===================================================================
