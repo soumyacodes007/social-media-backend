@@ -11,6 +11,14 @@ require("dotenv").config();
 // The serverless-http module is no longer needed, but it's okay to leave the require statement.
 // const serverless = require("serverless-http");
 
+
+// At the top of api/index.js with other model imports
+// ... other requires
+
+const Like = require("../models/like"); 
+const Share = require("../models/share"); 
+
+// ... other requires
 const Chat = require("../models/chat");
 const Story = require("../models/Stories");
 const Post = require("../models/post");
