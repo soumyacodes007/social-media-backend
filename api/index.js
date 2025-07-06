@@ -424,26 +424,6 @@ app.post("/api/uploads", upload.single("media"), async (req, res) => {
   }
 });
 
-app.get("/api/uploads/:phone", async (req, res) => {
-  try {
-    const { phone } = req.params;
-
-    const latestProfile = await Upload.findOne({
-      uploaderPhone: phone,
-      profileImage: { $exists: true },
-    }).sort({ uploadedAt: -1 });
-
-    if (!latestProfile) {
-      return res.status(404).json({ message: "No profile image found" });
-    }
-
-    res.status(200).json({ imageUrl: latestProfile.profileImage });
-  } catch (err) {
-    console.error("Error fetching profile image:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
 
 // DELETE an upload by ID
 app.delete("/api/uploads/:id", async (req, res) => {
