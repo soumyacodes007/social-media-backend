@@ -133,7 +133,7 @@ socket.on("user_online", (phone) => {
   });
 
   // Cleanup
-  socket.on("disconnect", async () => {
+ socket.on("disconnect", async () => {
   console.log("❌ User disconnected:", socket.id);
 
   const phone = Object.keys(onlineUsers).find(
@@ -147,7 +147,7 @@ socket.on("user_online", (phone) => {
 
     // Update lastSeen in your User schema if applicable
     try {
-      await User.updateOne({ phone }, { lastSeen }); // <-- make sure `User` is imported
+      await User.updateOne({ phone }, { isOnline: false, lastSeen });
     } catch (err) {
       console.error("Failed to update lastSeen:", err.message);
     }
