@@ -97,12 +97,19 @@ io.on("connection", (socket) => {
   });
 
   
-socket.on("user_online", (phone) => {
+socket.on("user_online", async (phone) => {
   onlineUsers[phone] = socket.id;
   console.log(`🟢 ${phone} is online`);
 
+  try {
+    await User.updateOne({ phone }, { isOnline: true });
+  } catch (err) {
+    console.error("Failed to update isOnline:", err.message);
+  }
+
   io.emit("presence_update", { phone, isOnline: true });
 });
+
 
   // Send + Save message
   socket.on("sendMessage", async (data) => {
