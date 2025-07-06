@@ -85,6 +85,7 @@ res.status(503).json({ message: "Service Unavailable: Could not connect to DB." 
 }
 });
 
+const onlineUsers = {}; // phone -> socket.id
 
 io.on("connection", (socket) => {
   console.log("✅ New user connected:", socket.id);
@@ -94,6 +95,14 @@ io.on("connection", (socket) => {
     socket.join(roomId);
     console.log(`📲 Joined room: ${roomId}`);
   });
+
+  
+socket.on("user_online", (phone) => {
+  onlineUsers[phone] = socket.id;
+  console.log(`🟢 ${phone} is online`);
+
+  io.emit("presence_update", { phone, isOnline: true });
+});
 
   // Send + Save message
   socket.on("sendMessage", async (data) => {
@@ -124,10 +133,33 @@ io.on("connection", (socket) => {
   });
 
   // Cleanup
-  socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
-  });
+  socket.on("disconnect", async () => {
+  console.log("❌ User disconnected:", socket.id);
+
+  const phone = Object.keys(onlineUsers).find(
+    (key) => onlineUsers[key] === socket.id
+  );
+
+  if (phone) {
+    delete onlineUsers[phone];
+
+    const lastSeen = new Date();
+
+    // Update lastSeen in your User schema if applicable
+    try {
+      await User.updateOne({ phone }, { lastSeen }); // <-- make sure `User` is imported
+    } catch (err) {
+      console.error("Failed to update lastSeen:", err.message);
+    }
+
+    io.emit("presence_update", {
+      phone,
+      isOnline: false,
+      lastSeen,
+    });
+  }
 });
+
 
 // --- Routes ---
 app.get("/", (req, res) => {
