@@ -436,39 +436,62 @@ app.post(
     { name: "voice", maxCount: 1 },
   ]),
   async (req, res) => {
-  try {
-    let fileUrl = "";
-    let fileType = "";
-    if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+    try {
+      let fileUrl = "";
+      let fileType = "";
+      let uploadedFile = null;
+
+      // Get the actual file (image, video or voice)
+      if (req.files?.video) uploadedFile = req.files.video[0];
+      else if (req.files?.image) uploadedFile = req.files.image[0];
+      else if (req.files?.voice) uploadedFile = req.files.voice[0];
+
+      if (!uploadedFile) {
+        return res
+          .status(400)
+          .json({ message: "No file provided in image, video, or voice field." });
+      }
+
+      // Upload to Cloudinary
+      const b64 = Buffer.from(uploadedFile.buffer).toString("base64");
+      const dataURI = `data:${uploadedFile.mimetype};base64,${b64}`;
+
       const result = await cloudinary.uploader.upload(dataURI, {
         folder: "uploads",
         resource_type: "auto",
       });
+
       fileUrl = result.secure_url;
-      fileType = req.file.mimetype;
+      fileType = uploadedFile.mimetype;
+
+      // Safely access text fields
+      const filename =
+        req.body.filename || uploadedFile.originalname || "Unnamed";
+      const caption = req.body.caption || "";
+      const uploaderPhone = req.body.uploaderPhone || "Unknown";
+
+      const uploadData = {
+        filename,
+        caption,
+        uploaderPhone,
+        uploadedAt: new Date(),
+      };
+
+      if (fileType.startsWith("image")) uploadData.imageUrl = fileUrl;
+      else if (fileType.startsWith("video")) uploadData.videoUrl = fileUrl;
+      else if (fileType.startsWith("audio")) uploadData.audioUrl = fileUrl;
+
+      const newUpload = await Upload.create(uploadData);
+
+      res.status(201).json(newUpload);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Upload failed", error: error.message });
     }
-
-    const { filename, uploader, caption } = req.body; // <-- get caption
-    const uploadData = {
-      filename: filename || (req.file ? req.file.originalname : undefined),
-      uploadedAt: new Date(),
-      uploaderPhone: req.body.uploaderPhone,
-      caption: caption || "", // <-- save caption
-    };
-
-    if (fileType.startsWith("image")) uploadData.imageUrl = fileUrl;
-    else if (fileType.startsWith("video")) uploadData.videoUrl = fileUrl;
-    else if (fileType.startsWith("audio")) uploadData.audioUrl = fileUrl;
-
-    const newUpload = await Upload.create(uploadData);
-
-    res.status(201).json(newUpload);
-  } catch (error) {
-    res.status(500).json({ message: "Upload failed", error: error.message });
   }
-});
+);
+
 
 
 // DELETE an upload by ID
