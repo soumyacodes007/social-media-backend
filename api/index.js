@@ -428,7 +428,14 @@ app.get("/api/uploads", async (req, res) => {
 
 // POST a new upload
 
-app.post("/api/uploads", upload.single("media"), async (req, res) => {
+app.post(
+  "/api/uploads",
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+    { name: "voice", maxCount: 1 },
+  ]),
+  async (req, res) => {
   try {
     let fileUrl = "";
     let fileType = "";
