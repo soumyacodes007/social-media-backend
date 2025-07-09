@@ -166,7 +166,7 @@ socket.on("user_online", async (phone) => {
     });
   }
 });
-
+}); // ✅ MISSING CLOSING BRACE FOR io.on("connection")
 
 // --- Routes ---
 app.get("/", (req, res) => {
@@ -767,11 +767,10 @@ app.get("/api/users/:id/following", async (req, res) => {
 
 
 // ===================================================================
-// START THE SERVER - This is the corrected block for Render
+// START THE SERVER - Fixed for Render deployment
 // ===================================================================
 
-
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
