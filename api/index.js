@@ -624,18 +624,36 @@ app.post("/api/like", async (req, res) => {
 
 
 // --- GET ALL LIKES FOR A POST (To get the count and list of users) ---
+// --- GET ALL LIKES FOR A POST (To get the count and list of users) ---
 app.get("/api/posts/:postId/likes", async (req, res) => {
   try {
     const { postId } = req.params;
-    const likes = await Like.find({ postId }).populate("userId", "name profilePic");
-    // The total count is just the length of the array
+    
+    // First, let's see what we get without populate
+    const likes = await Like.find({ postId });
+    console.log("🔍 Raw likes data:", likes);
+    
+    // Try to populate with the correct field name
+    // Check your Like model to see if it's 'userId' or 'user'
+    const populatedLikes = await Like.find({ postId }).populate("userId", "name profilePic");
+    console.log("🔍 Populated likes:", populatedLikes);
+    
+    // If populate fails, try without populate and return raw user IDs
     const likeCount = likes.length;
-
+    
+    // Filter out any null/undefined users
+    const validUsers = populatedLikes
+      .map(like => like.userId)
+      .filter(user => user !== null && user !== undefined);
+    
+    console.log("✅ Valid users:", validUsers);
+    
     res.status(200).json({
       count: likeCount,
-      users: likes.map(like => like.userId) // Return a clean array of user objects
+      users: validUsers // Return only valid user objects
     });
   } catch (error) {
+    console.error("❌ Error in likes endpoint:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
